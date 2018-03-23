@@ -1,0 +1,19 @@
+
+{
+
+     "name": "jd/guzzle demo",
+     "authors": [
+
+         {
+             "name": "John Doe",
+             "email": "john@doe.tst"
+
+         }
+     ],
+   
+   "require": {
+      "guzzlehttp/guzzle": "~6.0"
+   }
+
+
+ }

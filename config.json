@@ -1,0 +1,6 @@
+{
+  "host":"localhost",
+  "db_name":"matching_tool",
+  "db_user":"root",
+  "db_password":"root"
+}
