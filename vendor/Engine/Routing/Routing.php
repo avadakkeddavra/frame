@@ -2,6 +2,7 @@
 namespace Engine\Routing;
 
 use Engine\Request\Request;
+use App\Kernel;
 
 class Routing
 {
@@ -46,8 +47,10 @@ class Routing
     public function execute(Request $request)
     {
         $url = $_SERVER['REQUEST_URI'];
-        $handler = $this->findRoute($url);
 
+        $this->everyPageMiddleware($request);
+
+        $handler = $this->findRoute($url);
         if(isset($handler['handler']))
         {
             call_user_func($handler['handler']);
@@ -56,6 +59,7 @@ class Routing
             {
                 $controller = new $handler['controller'];
 
+                $this->runMiddleware($request,$controller);
                 if(method_exists($controller,$handler['action']))
                 {
                     if($request->method() == $handler['method'])
@@ -77,6 +81,27 @@ class Routing
             }
         }
 
+    }
+
+    protected function runMiddleware(Request $request,$controller)
+    {
+        $middleware = new $controller->middleware;
+        call_user_func(array($middleware,'boot'),$request);
+    }
+
+    protected function everyPageMiddleware(Request $request)
+    {
+        $middlewares = Kernel::everyPageMiddleware();
+
+        foreach($middlewares as $middleware)
+        {
+            $response = call_user_func(array(new $middleware,'boot'),$request);
+            if(!$response)
+            {
+                echo new \Exception('Whoooops.)');
+                die();
+            }
+        }
     }
 
     protected function findRoute($key)
