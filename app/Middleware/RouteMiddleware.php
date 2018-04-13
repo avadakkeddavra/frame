@@ -8,9 +8,9 @@ class RouteMiddleware
 {
     public function boot(Request $request)
     {
-        if($request->method != 'GET')
+        if($request->getMethod() != 'GET')
         {
-            return false;
+            return true;
         }
 
         return true;
