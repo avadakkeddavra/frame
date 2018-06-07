@@ -17,48 +17,63 @@ class HomeController extends Controller
     {
         $title = 'Home Controller';
         $monthAgo = Carbon::now()->subMonth(1);
-        $data['hours']['month'] = TasksManage::with('task')->where('created_at','>',$monthAgo)->sum('time');
-        $data['hours']['all'] = TasksManage::with('task')->sum('time');
-        $data['tasks']['month'] = TasksManage::with('task')->where('created_at','>',$monthAgo)->count();
-        $data['tasks']['all'] = TasksManage::with('task')->count();
+        $user = \Auth::user()->id;
+        $data['hours']['month'] = TasksManage::with('task')->where('user_id',$user)->where('created_at','>',$monthAgo)->sum('time');
+        $data['hours']['all'] = TasksManage::with('task')->where('user_id',$user)->sum('time');
+        $data['tasks']['month'] = TasksManage::with('task')->where('user_id',$user)->where('created_at','>',$monthAgo)->count();
+        $data['tasks']['all'] = TasksManage::with('task')->where('user_id',$user)->count();
 
         return view('home',['title' => $title,'data' => $data]);
     }
 
-    public function chartdata()
+    public function chartdata(Request $request)
     {
-        $chartData = Tasks::leftJoin('tasks_manage','tasks.id','=','tasks_manage.task_id')
-            ->select('tasks_manage.*', 'tasks.task_id')
-            ->where('tasks_manage.time','!=','null')
-            ->orderBy('tasks_manage.date','asc')->get()->toArray();
+        $param = $request->getAll();
+        if($param['id'])
+        {
+            $chartData =  Tasks::with('manage')->where('id',$request->get('id'))->first();
+        }else{
+            $chartData = Tasks::leftJoin('tasks_manage','tasks.id','=','tasks_manage.task_id')
+                ->select('tasks_manage.*', 'tasks.task_id')
+                ->where('tasks_manage.time','!=','null')
+                ->orderBy('tasks_manage.date','asc')->get()->toArray();
+        }
+
         echo json_encode($chartData);
     }
 
     public function getCsvData(Request $request)
     {
         $params = $request->getAll();
-        $tasks = TasksManage::with('task')
-            ->where('date','>=',$params['from'])
-            ->where('date','<=',$params['to'])
-            ->orderBy('date','desc')
-            ->get();
 
-        $hours = TasksManage::with('task')
-            ->where('date','>=',$params['from'])
-            ->where('date','<=',$params['to'])
-            ->sum('time');
+
+        $hours = Tasks::where('task_id','!=',0)
+            ->where('user_id',\Auth::user()->id)
+            ->where('updated_at','>=',$params['from'])
+            ->where('updated_at','<=',$params['to'])->sum('spent');
+
+        $allTasks = Tasks::where('user_id',\Auth::user()->id)
+            ->where('task_id','!=',0)
+            ->where('updated_at','>=',$params['from'])
+            ->where('updated_at','<=',$params['to'])
+            ->orderBy('updated_at','desc')
+            ->get();
 
         $filename = trim(date('Y-m-d_H:i:s').'.csv');
         $file=fopen(storage_path().'/app/'.$filename,'w');
-        fputcsv($file,['Номер задачи','Название','Часов потрачено','Дата']);
+        fputcsv($file,['Номер задачи','Название','Проект','Часов потрачено']);
 
-        foreach($tasks as $task)
+
+        foreach($allTasks as $fulltask)
         {
-            $data = ['# '.$task->task->task_id,$task->task->name,$task->time,$task->date];
+            $data = ['# '.$fulltask->task_id,$fulltask->name,$fulltask->project->name,$fulltask->spent];
             fputcsv($file,$data);
         }
 
+
         fputcsv($file,[]);
+
+
         fputcsv($file,['Всего часов',$hours]);
         fclose($file);
 

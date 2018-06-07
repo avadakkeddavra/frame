@@ -1,6 +1,8 @@
 {
-  "host":"localhost",
-  "db_name":"matching_tool",
-  "db_user":"root",
-  "db_password":"root"
+  "host":"avadak00.mysql.tools",
+  "db_name":"avadak00_tasks",
+  "db_user":"avadak00_tasks",
+  "db_password":"trollface+100500",
+  "db_driver":"mysql",
+  "charset":"utf8"
 }

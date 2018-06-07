@@ -36,7 +36,12 @@ class Request
         }
     }
 
-    public function method()
+    public function method($method)
+    {
+        return $this->method == $method;
+    }
+
+    public function getMethod()
     {
         return $this->method;
     }
